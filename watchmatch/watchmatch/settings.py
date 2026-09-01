@@ -82,7 +82,7 @@ DATABASES = {
     }
 }
 
-
+AUTH_USER_MODEL = "to_do_app.User"
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
