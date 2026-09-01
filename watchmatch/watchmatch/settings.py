@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     "to_do_app",
     "rest_framework",
     "rest_framework.authtoken",
-    "user_app"
+    "user_app",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
@@ -133,6 +134,9 @@ MAILERS = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-    ]
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '1/day',
+        'user': '3/day'
+    }
 }
-

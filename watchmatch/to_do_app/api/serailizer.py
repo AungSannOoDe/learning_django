@@ -19,8 +19,9 @@
 from rest_framework import serializers
 from to_do_app.models import Movie, StreamPlatform, WatchList,Review
 
+
 class ReviewSerializer(serializers.ModelSerializer):
-    review_user=serializers.StringRelatedField(read_only=True)
+    review_user=serializers.StringRelatedField( source="review_user.first_name",read_only=True)
     class Meta:
         model=Review
         exclude = ('watchlist',)
@@ -37,7 +38,7 @@ class MovieSerializer(serializers.ModelSerializer):
 
 
 class WatchListSerializer(serializers.ModelSerializer):
-    review=ReviewSerializer(many=True,read_only=True)
+    reviews=ReviewSerializer(many=True,read_only=True)
     len_title = serializers.SerializerMethodField()
     
     class Meta:

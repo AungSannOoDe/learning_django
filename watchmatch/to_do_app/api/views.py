@@ -2,11 +2,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics
+from rest_framework import filters
 from django.shortcuts import get_object_or_404
 from rest_framework.authentication import SessionAuthentication,BasicAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from .permission import AdminOrReadOnly,ReviewOrReadOnly
+from rest_framework.throttling import UserRateThrottle,AnonRateThrottle
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from to_do_app.api.serailizer import (
     MovieSerializer,
@@ -16,13 +19,21 @@ from to_do_app.api.serailizer import (
 
 from to_do_app.models import Movie, StreamPlatform, WatchList,Review
 
-class ReviewList(generics.ListCreateAPIView):
-    permission_classes=[AdminOrReadOnly,IsAuthenticated]
-    # queryset=Review.objects.all()
+
+class UserReview(generics.ListAPIView):
     serializer_class=ReviewSerializer
     def get_queryset(self):
-        pk=self.kwargs['pk']
-        return  Review.objects.filter(watchlist=pk)
+        username=self.request.query_params.get('name',None)
+        return Review.objects.filter(review_user__first_name__icontains=username)
+class ReviewList(generics.ListCreateAPIView):
+    permission_classes=[AdminOrReadOnly,IsAuthenticated]
+    serializer_class=ReviewSerializer
+    filter_backends=[filters.SearchFilter,DjangoFilterBackend]
+    search_fields=['review_user__first_name']
+    filterset_fields=['active']
+    def get_queryset(self):
+         pk=self.kwargs['pk']
+         return Review.objects.filter(watchlist=pk)
     
 # class StreamPlatformVS(viewsets.ViewSet):
 #     def list(self,request):
@@ -52,13 +63,14 @@ class ReviewCreate(generics.CreateAPIView):
         if review_request.exists():
             return ValidationError("You have already reviewed this movie!")
         if movie.number_rating==0:
-            movie.average_rating=serializer.validated_data['rating']
+            movie.average_rating=serializer.validated_data['ratings']
         else :
             movie.average_rating=(movie.average_rating+serializer.validated_data['rating'])/2
         movie.number_rating=movie.number_rating+1
         movie.save()
         serializer.save(watchlist=movie,review_user=review_user)
 class ReviewDetail(generics.RetrieveUpdateDestroyAPIView):
+    throttle_classes=[UserRateThrottle,AnonRateThrottle]
     permission_classes=[ReviewOrReadOnly,IsAuthenticated]
     queryset=Review.objects.all()
     serializer_class=ReviewSerializer

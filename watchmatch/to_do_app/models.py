@@ -74,7 +74,7 @@ class StreamPlatform(models.Model):
 class WatchList(models.Model):
     title = models.CharField(max_length=10)
     storyline = models.CharField(max_length=200)
-
+    
     platform = models.ForeignKey(
         StreamPlatform,
         on_delete=models.CASCADE,
