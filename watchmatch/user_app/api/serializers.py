@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 User = get_user_model()
 class RgisterSeriallizer(serializers.ModelSerializer):
     password2=serializers.CharField(write_only=True)
@@ -24,3 +24,28 @@ class RgisterSeriallizer(serializers.ModelSerializer):
         account.set_password(password)
         account.save()
         return account
+
+class LoginSerializer(serializers.Serializer):
+
+    phone_number = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def save(self):
+        phone_number = self.validated_data["phone_number"]
+        password = self.validated_data["password"]
+
+        user = authenticate(
+            phone_number=phone_number,
+            password=password
+        )
+
+        if user is None:
+            raise serializers.ValidationError({
+                "error": "Invalid phone number or password"
+            })
+
+        if not user.is_active:
+            raise serializers.ValidationError({
+                "error": "Account is inactive"
+            })
+        return user

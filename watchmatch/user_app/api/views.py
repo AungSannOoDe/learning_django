@@ -3,13 +3,12 @@ from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from user_app.api.serializers import RgisterSeriallizer
+from user_app.api.serializers import RgisterSeriallizer,LoginSerializer
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def profile_view(request):
     user = request.user
-
     data = {
         "id": user.id,
         "name": user.first_name,
@@ -18,12 +17,16 @@ def profile_view(request):
 
     return Response(data)
 @api_view(['POST',])
+@permission_classes([IsAuthenticated])
 def logout_view(request):
     if request.method=="POST":
-        request.user.auth_token.delete()
-        data={"message":"User logout successfully"}
-        return Response(data,status=status.HTTP_200_OK)
-
+        try:
+            request.user.auth_token.delete()
+            data={"message":"User logout successfully"}
+            return Response(data,status=status.HTTP_200_OK)
+        except Token.DoesNotExist or Token==None:
+            return Response({"message":" User is not in acccount"},status=status.HTTP_400_BAD_REQUEST)
+            
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def registration_view(request):
@@ -41,6 +44,32 @@ def registration_view(request):
             data,
             status=status.HTTP_201_CREATED
         )
+
+    return Response(
+        serializer.errors,
+        status=status.HTTP_400_BAD_REQUEST
+    )
+    
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def login_view(request):
+
+    serializer = LoginSerializer(data=request.data)
+
+    if serializer.is_valid():
+        user = serializer.save()
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({
+            "message": "Login successful",
+            "token": token.key,
+            "user": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "phone_number": user.phone_number
+            }
+        }, status=status.HTTP_200_OK)
 
     return Response(
         serializer.errors,
