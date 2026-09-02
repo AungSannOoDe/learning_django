@@ -28,7 +28,7 @@ class UserReview(generics.ListAPIView):
 class ReviewList(generics.ListCreateAPIView):
     permission_classes=[AdminOrReadOnly,IsAuthenticated]
     serializer_class=ReviewSerializer
-    filter_backends=[filters.SearchFilter,DjangoFilterBackend]
+    filter_backends=[filters.SearchFilter,DjangoFilterBackend,filters.OrderingFilter]
     search_fields=['review_user__first_name']
     filterset_fields=['active']
     def get_queryset(self):
